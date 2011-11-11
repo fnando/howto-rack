@@ -73,7 +73,7 @@ class FU
     builder.use Rack::MethodOverride
     builder.use Rack::NestedParams
 
-    middlewares.each do |middleware, *args|
+    middlewares.each do |middleware, args|
       builder.use middleware, *args
     end
 
