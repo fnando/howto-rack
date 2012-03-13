@@ -5,28 +5,23 @@ require "active_support/hash_with_indifferent_access"
 
 class FU
   class App
-    attr_reader :env
+    attr_reader :env, :params, :request
     attr_accessor :callback
 
     def initialize(callback)
       @callback = callback
     end
 
-    def request
-      @request ||= Rack::Request.new(env)
-    end
-
-    def params
-      @params ||= begin
+    def call(env)
+      @env = env
+      @request = Rack::Request.new(env)
+      @params = begin
         params = request.params || {}
         params.merge!(request.env["rack.request.form_hash"] || {})
         params.merge!(request.env["rack.routing_args"] || {})
         ActiveSupport::HashWithIndifferentAccess.new(params)
       end
-    end
 
-    def call(env)
-      @env = env
       instance_eval(&callback)
     end
   end
@@ -104,6 +99,14 @@ end
 app = FU.app do
   use Rack::Runtime
 
+  get "/:name" do
+    [
+      200,
+      {"Content-Type" => "text/html"},
+      ["Hello #{params[:name]}!"]
+    ]
+  end
+
   get "/" do
     name = params.fetch(:name, "Rackers")
 
@@ -111,14 +114,6 @@ app = FU.app do
       200,
       {"Content-Type" => "text/html"},
       ["Hello #{name}!"]
-    ]
-  end
-
-  get "/:name" do
-    [
-      200,
-      {"Content-Type" => "text/html"},
-      ["Hello #{params[:name]}!"]
     ]
   end
 
